@@ -150,11 +150,11 @@ export default function SignUpPage() {
     <div className="relative flex min-h-screen w-full items-center justify-center p-4 md:p-10 bg-gray-100">
       <div className="absolute top-0 left-0 w-full h-1/2 z-0">
         <Image
-          src="/signup.svg"
+          src="/signup.png"
           alt="City Background"
           layout="fill"
           objectFit="cover"
-          objectPosition="top"
+          objectPosition="0% 67%"
           quality={80}
           aria-hidden="true"
           priority
