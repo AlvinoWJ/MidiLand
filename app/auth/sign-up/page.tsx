@@ -154,8 +154,10 @@ export default function SignUpPage() {
           alt="City Background"
           layout="fill"
           objectFit="cover"
+          objectPosition="top"
           quality={80}
           aria-hidden="true"
+          priority
         />
       </div>
     
