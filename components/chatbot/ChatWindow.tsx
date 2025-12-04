@@ -120,7 +120,6 @@ const ReadReceipt: FC<{
   }
   return null;
 };
-
 const ChatWindow: FC<ChatWindowProps> = ({
   messages,
   isBotTyping,
@@ -160,7 +159,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
   }, [messages, isBotTyping]);
 
   return (
-    <div className="fixed bottom-20 right-4 w-96 z-50 font-sans">
+    <div className="fixed bottom-20 right-4 left-4 md:left-auto md:w-96 z-50 font-sans">
       <div 
         className="absolute z-50 pointer-events-none" 
         style={{ top: "-75px", left: "-5px" }}
