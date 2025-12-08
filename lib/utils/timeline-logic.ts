@@ -104,7 +104,7 @@ export const generateTimeline = (property: UlokEksternal): TimelineStep[] => {
     }
 
     timeline.push({
-        step: "Property Disetujui",
+        step: "Status Properti",
         status: approvalStatus,
         details: approvalDetails
     });
