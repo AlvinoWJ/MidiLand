@@ -19,6 +19,7 @@ import {
 import Footer from "@/components/layout/Footer";
 import NavbarLanding from "@/components/layout/navbarlanding";
 import { ChatBotButton } from "@/components/chatbot/ChatBotButton";
+import ContactSection from "@/components/landing/ContactSection";
 
 export default function Home() {
   return (
@@ -32,6 +33,7 @@ export default function Home() {
         <FaqAndContactSection />
         <CTASection />
       </div>
+      <ContactSection />
       <ChatBotButton />
       <Footer />
     </>
