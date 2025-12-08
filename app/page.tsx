@@ -9,6 +9,7 @@ import BenefitsSection from "../components/landing/BenefitsSection";
 import ProcessSection from "../components/landing/ProcessSection";
 import FaqAndContactSection from "../components/landing/FaqAndContactSection";
 import CTASection from "../components/landing/CTASection";
+import ContactSection from "../components/landing/ContactSection";
 
 export default function Home() {
   return (
@@ -22,6 +23,7 @@ export default function Home() {
         <FaqAndContactSection />
         <CTASection />
       </div>
+      <ContactSection />
       <ChatBotButton />
       <Footer />
     </>
