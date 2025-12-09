@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 async function getCurrentExternalUser() {
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
+  const { data: auth } = await supabase.auth.getUser(); 
   const uid = auth?.user?.id;
   if (!uid) return null;
 
@@ -31,8 +31,8 @@ function safeFileName(name: string) {
   const base = parts.join(".");
   const normalized = base
     .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-_]/g, "");
+    .replace(/\s+/g, "-") 
+    .replace(/[^a-z0-9-_]/g, ""); 
   return (normalized || "file") + ext.toLowerCase();
 }
 
@@ -45,10 +45,7 @@ export async function GET(req: NextRequest) {
     const supabase = await createClient();
 
     const { searchParams } = new URL(req.url);
-    const limit = Math.max(
-      0,
-      Math.min(100, Number(searchParams.get("limit") ?? 20))
-    );
+    const limit = Math.max(0, Math.min(100, Number(searchParams.get("limit") ?? 20)));
     const offset = Math.max(0, Number(searchParams.get("offset") ?? 0));
 
     const { data: rawData, count, error } = await supabase
@@ -107,14 +104,23 @@ export async function GET(req: NextRequest) {
 
       const { data: ulokInternal } = await supabase
         .from('ulok')
-        .select('id, ulok_eksternal_id')
+        .select('id, ulok_eksternal_id, approval_status')
         .in('ulok_eksternal_id', ulokEksternalIds);
 
-      const kpltMap: Record<string, string> = {}; 
+      const ulokInternalMap: Record<string, string> = {}; 
+      const internalUlokIds: string[] = [];
 
-      if (ulokInternal && ulokInternal.length > 0) {
-          const internalUlokIds = ulokInternal.map(u => u.id);
-          
+      if (ulokInternal) {
+          ulokInternal.forEach(u => {
+              internalUlokIds.push(u.id);
+              if (u.approval_status) {
+                  ulokInternalMap[u.ulok_eksternal_id] = u.approval_status;
+              }
+          });
+      }
+
+      const kpltMap: Record<string, string> = {}; 
+      if (internalUlokIds.length > 0) {
           const { data: kpltData } = await supabase
             .from('kplt')
             .select('ulok_id, kplt_approval')
@@ -125,7 +131,8 @@ export async function GET(req: NextRequest) {
              kpltData.forEach(k => {
                  if(k.kplt_approval) ulokToKplt[k.ulok_id] = k.kplt_approval;
              });
-             ulokInternal.forEach(u => {
+             
+             ulokInternal?.forEach(u => {
                  if (ulokToKplt[u.id]) {
                      kpltMap[u.ulok_eksternal_id] = ulokToKplt[u.id];
                  }
@@ -147,7 +154,8 @@ export async function GET(req: NextRequest) {
               ...row,
               penanggungjawab_nama: pjInfo?.nama ?? null,
               penanggungjawab_telp: pjInfo?.no_telp ?? null,
-              kplt_approval: kpltMap[row.id] || null 
+              kplt_approval: kpltMap[row.id] || null,
+              ulok_approval: ulokInternalMap[row.id] || null
           };
       });
     } else {
@@ -180,14 +188,15 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    
     const form = await req.formData();
-    const body = parseCreateUlokEksternalFromFormData(form);
-    const incomingFile = requireFotoFile(form);
+    const body = parseCreateUlokEksternalFromFormData(form); 
+    const incomingFile = requireFotoFile(form); 
+
     const id = crypto.randomUUID();
     const ts = Date.now();
     const originalName = incomingFile.name || "file";
     const fileName = `${ts}_${safeFileName(originalName)}`;
-
     objectPath = `${id}/ulok_eksternal/${fileName}`;
 
     const { error: upErr } = await supabase.storage
@@ -209,7 +218,7 @@ export async function POST(req: NextRequest) {
       id,
       users_eksternal_id: user.id,
       ...body,
-      foto_lokasi: objectPath,
+      foto_lokasi: objectPath, 
     };
 
     const { data, error } = await supabase

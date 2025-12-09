@@ -53,8 +53,10 @@ async function ensureOwnedRow(
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params;
+
   try {
     const user = await getCurrentExternalUser();
     if (!user)
@@ -66,86 +68,94 @@ export async function GET(
 
     let pjNama: string | null = null;
     let pjNoTelp: string | null = null;
+    let surveyAssignedAt: string | null = null;
 
     if (row.penanggungjawab) {
-      const { data: pj, error: pjErr } = await supabase
+      const { data: pj } = await supabase
         .from("users")
-        .select("id, nama, no_telp")
+        .select("nama, no_telp")
         .eq("id", row.penanggungjawab)
         .maybeSingle();
 
-      if (!pjErr && pj) {
+      if (pj) {
         pjNama = pj.nama ?? null;
         pjNoTelp = pj.no_telp ?? null;
+        surveyAssignedAt = row.updated_at;
       }
-    }
-
-    if (!pjNama) {
-       const { data: activityData, error: actError } = await supabase
+    } 
+    else {
+      const { data: activity } = await supabase
         .from("assignment_activities")
         .select(`
+            created_at,
             assignments!inner (
-                users!inner (
-                    nama,
-                    no_telp
-                )
+                users!inner ( nama, no_telp )
             )
         `)
         .eq("external_location_id", row.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
         .maybeSingle();
       
-      if (!actError && activityData) {
-          const assignmentInfo = activityData.assignments as any;
-          if (assignmentInfo?.users) {
-              pjNama = assignmentInfo.users.nama ?? null;
-              pjNoTelp = assignmentInfo.users.no_telp ?? null;
-          }
+      const u = (activity as any)?.assignments?.users;
+      if (u) {
+        pjNama = u.nama ?? null;
+        pjNoTelp = u.no_telp ?? null;
+        surveyAssignedAt = (activity as any)?.created_at ?? null;
       }
     }
 
     let kpltApproval: string | null = null;
+    let kpltApprovedAt: string | null = null;
+    let ulokApproval: string | null = null;
+    let internalReviewedAt: string | null = null;
+    const approvedAt: string | null = row.approved_at;
 
-    const { data: uloks, error: ulokErr } = await supabase
+    const { data: uloks } = await supabase
       .from("ulok")
-      .select("id")
+      .select("id, approval_status, updated_at")
       .eq("ulok_eksternal_id", row.id);
 
-    if (!ulokErr && uloks && uloks.length > 0) {
+    if (uloks && uloks.length > 0) {
       const ulokIds = uloks.map((u) => u.id);
-      const { data: latestKplt, error: kErr } = await supabase
+
+      if (uloks[0].approval_status) {
+        ulokApproval = uloks[0].approval_status;
+        internalReviewedAt = uloks[0].updated_at;
+      }
+      
+      const { data: latestKplt } = await supabase
         .from("kplt")
-        .select("id, kplt_approval, created_at, ulok_id")
+        .select("kplt_approval, created_at")
         .in("ulok_id", ulokIds)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (!kErr && latestKplt) {
+      if (latestKplt) {
         kpltApproval = latestKplt.kplt_approval ?? null;
+        kpltApprovedAt = latestKplt.created_at ?? null;
       }
     }
 
-    const status = {
-      created_at: row.created_at ?? null,
-      status_ulok_eksternal: row.status_ulok_eksternal ?? null,
-      approved_at: row.approved_at ?? null,
-      penanggungjawab: {
-        nama: pjNama,
-        no_telp: pjNoTelp,
-      },
+    const enrichedData = {
+      ...row,
+      penanggungjawab_nama: pjNama,
+      penanggungjawab_telp: pjNoTelp,
+      survey_assigned_at: surveyAssignedAt,
       kplt_approval: kpltApproval,
+      ulok_approval: ulokApproval,
+      internal_reviewed_at: internalReviewedAt,
+      kplt_approved_at: kpltApprovedAt, 
+      approved_at: approvedAt,
     };
 
     return NextResponse.json(
       {
         success: true,
-        ulok_eksternal: row,
-        status,
+        ulok_eksternal: enrichedData,
       },
       { status: 200 }
     );
+
   } catch (e: any) {
     return NextResponse.json(
       { error: e?.message ?? "Unknown error" },
@@ -156,8 +166,10 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params;
+
   try {
     const contentType = req.headers.get("content-type") || "";
     if (!contentType.toLowerCase().includes("multipart/form-data")) {
@@ -255,8 +267,10 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params;
+
   try {
     const user = await getCurrentExternalUser();
     if (!user)
