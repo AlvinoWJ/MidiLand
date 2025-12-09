@@ -20,9 +20,7 @@ export const TimelineStatus: React.FC<TimelineStatusProps> = ({ property, assetN
         </div>
       );
     }
-    
     const currentTimeline = generateTimeline(property);
-
     const getStatusClasses = (status: TimelineStep['status'], details: string = '') => {
         const isRejected = details.toLowerCase().includes('ditolak') || details.toLowerCase().includes('tidak disetujui');
 
@@ -78,7 +76,6 @@ export const TimelineStatus: React.FC<TimelineStatusProps> = ({ property, assetN
                     {assetName}
                 </p>
             </div>
-
             <ul role="list" className="-mb-8">
                 {currentTimeline.map((item, index) => {
                     const isLast = index === currentTimeline.length - 1;
@@ -91,12 +88,10 @@ export const TimelineStatus: React.FC<TimelineStatusProps> = ({ property, assetN
                                 {!isLast && (
                                     <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true" />
                                 )}
-                                
                                 <div className="relative flex items-start space-x-3">
                                     <div className={`relative flex h-8 w-8 items-center justify-center rounded-full bg-white ring-4 ${ringColor}`}>
                                         <Icon className={`h-5 w-5 ${iconColor}`} aria-hidden="true" />
                                     </div>
-
                                     <div className={`flex-1 min-w-0 rounded-lg border ${borderColor} ${bgColor} p-3 transition-all hover:shadow-sm`}>
                                         <div className="flex justify-between items-center mb-2">
                                             <p className={`text-sm font-bold ${textColor}`}>
