@@ -22,6 +22,7 @@ interface UserProperty {
   kecamatan: string | null;
   status: string;
   kplt_approval: string | null;
+  ulok_approval: string | null;
 }
 
 function PropertyCard({ property }: { property: UserProperty }) {
@@ -58,6 +59,7 @@ function PropertyCard({ property }: { property: UserProperty }) {
             <StatusBadge 
               status={property.status} 
               kplt_approval={property.kplt_approval} 
+              ulok_approval={property.ulok_approval}
             />
           </div>
         </div>
@@ -104,17 +106,26 @@ export default async function DashboardPage() {
     }
 
     if (data && data.length > 0) {
-      
       const ulokEksternalIds = data.map((p) => p.id);
+      
       const kpltMap: Record<string, string> = {};
+      const ulokInternalMap: Record<string, string> = {};
       
       const { data: uloks } = await supabase
         .from('ulok')
-        .select('id, ulok_eksternal_id')
+        .select('id, ulok_eksternal_id, approval_status')
         .in('ulok_eksternal_id', ulokEksternalIds);
       
       if (uloks && uloks.length > 0) {
-          const ulokIds = uloks.map(u => u.id);
+          const ulokIds: string[] = [];
+
+          uloks.forEach(u => {
+              ulokIds.push(u.id);
+              if (u.approval_status) {
+                  ulokInternalMap[u.ulok_eksternal_id] = u.approval_status;
+              }
+          });
+
           const { data: kplts } = await supabase
             .from('kplt')
             .select('ulok_id, kplt_approval')
@@ -141,7 +152,8 @@ export default async function DashboardPage() {
         status: prop.status_ulok_eksternal,
         kabupaten: prop.kabupaten,
         kecamatan: prop.kecamatan,
-        kplt_approval: kpltMap[prop.id] || null
+        kplt_approval: kpltMap[prop.id] || null,
+        ulok_approval: ulokInternalMap[prop.id] || null
       }));
     }
   } else {
