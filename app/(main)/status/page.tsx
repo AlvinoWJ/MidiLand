@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Search,
   List,
@@ -11,6 +11,7 @@ import {
   Briefcase,
   Building2,
   Layers,
+  Loader2, 
 } from "lucide-react";
 import { useFetchData } from "@/components/status/hooks/useFetchData";
 import { KPICard } from "@/components/status/KPICard";
@@ -40,13 +41,19 @@ const formatFullDateTime = (dateString: string) => {
 
 export default function DashboardWithAccordion() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname(); 
   const selectedId = searchParams.get("selected");
-
   const { data: fetchedProperties, loading, error } = useFetchData();
   const [propertiesData, setPropertiesData] = useState<UlokEksternal[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeAccordionId, setActiveAccordionId] = useState<string | null>(null);
+  const [detailProperty, setDetailProperty] = useState<UlokEksternal | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+
   const daftarRef = useRef<HTMLDivElement>(null);
+  
+  const hasHandledInitialSelection = useRef(false);
 
   useEffect(() => {
     if (fetchedProperties.length > 0) {
@@ -54,17 +61,64 @@ export default function DashboardWithAccordion() {
     }
   }, [fetchedProperties]);
 
+  useEffect(() => {
+    if (selectedId && propertiesData.length > 0 && !hasHandledInitialSelection.current) {
+      const propertyExists = propertiesData.some((p) => p.id === selectedId);
+      
+      if (propertyExists) {
+        setActiveAccordionId(selectedId);
+        hasHandledInitialSelection.current = true;
+        setTimeout(() => scrollAccordionHeaderToAlignWithTimeline(selectedId), 300);
+      }
+    }
+  }, [selectedId, propertiesData]);
+
+  useEffect(() => {
+    if (!activeAccordionId) {
+      setDetailProperty(null);
+      return;
+    }
+
+    setIsDetailLoading(true);
+
+    const optimisticData = propertiesData.find((p) => p.id === activeAccordionId);
+    if (optimisticData) {
+      setDetailProperty(optimisticData);
+    }
+
+    const fetchDetail = async () => {
+      try {
+        const res = await fetch(`/api/usulan_lokasi/${activeAccordionId}`);
+        const json = await res.json();
+
+        if (json.success && json.ulok_eksternal) {
+          setDetailProperty(json.ulok_eksternal);
+
+          setPropertiesData((prev) =>
+            prev.map((p) =>
+              p.id === activeAccordionId ? json.ulok_eksternal : p
+            )
+          );
+        }
+      } catch (err) {
+        console.error("Gagal fetch detail:", err);
+      } finally {
+        setIsDetailLoading(false);
+      }
+    };
+
+    fetchDetail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAccordionId]);
+
   const scrollAccordionHeaderToAlignWithTimeline = (accordionId: string) => {
     const element = document.getElementById(`accordion-${accordionId}`);
     if (!element) return;
-
     const FIXED_TOP_OFFSET = 80;
-
     requestAnimationFrame(() => {
       const elemRect = element.getBoundingClientRect();
       const targetScrollY =
         window.scrollY + elemRect.top - FIXED_TOP_OFFSET + 4;
-
       window.scrollTo({
         top: targetScrollY,
         behavior: "smooth",
@@ -72,40 +126,27 @@ export default function DashboardWithAccordion() {
     });
   };
 
-  useEffect(() => {
-    if (selectedId && propertiesData.length > 0) {
-      const propertyExists = propertiesData.some((p) => p.id === selectedId);
-      if (propertyExists) {
-        setActiveAccordionId(selectedId);
-        setTimeout(() => scrollAccordionHeaderToAlignWithTimeline(selectedId), 300);
-      }
-    }
-  }, [selectedId, propertiesData]);
-
   const handleAssetUpdate = (updatedProperty: UlokEksternal) => {
     setPropertiesData((prev) =>
       prev.map((p) => (p.id === updatedProperty.id ? updatedProperty : p))
     );
   };
 
-  const selectedProperty = useMemo(
-    () => propertiesData.find((p) => p.id === activeAccordionId) || null,
-    [activeAccordionId, propertiesData]
-  );
-
   const total = propertiesData.length;
-
   const rented = propertiesData.filter((p) => {
-      const kplt = p.kplt_approval?.toLowerCase() || '';
-      return ['approved', 'disetujui', 'ok'].includes(kplt);
+    const kplt = p.kplt_approval?.toLowerCase() || "";
+    return ["approved", "disetujui", "ok"].includes(kplt);
   }).length;
-
   const pending = propertiesData.filter((p) => {
-      const kplt = p.kplt_approval?.toLowerCase() || '';
-      const isApproved = ['approved', 'disetujui', 'ok'].includes(kplt);
-      const isRejected = p.status_ulok_eksternal === 'Rejected' || kplt.includes('reject') || kplt.includes('tolak') || kplt.includes('nok');
-      const isDraft = p.status_ulok_eksternal === 'Draft';
-      return !isApproved && !isRejected && !isDraft;
+    const kplt = p.kplt_approval?.toLowerCase() || "";
+    const isApproved = ["approved", "disetujui", "ok"].includes(kplt);
+    const isRejected =
+      p.status_ulok_eksternal === "Rejected" ||
+      kplt.includes("reject") ||
+      kplt.includes("tolak") ||
+      kplt.includes("nok");
+    const isDraft = p.status_ulok_eksternal === "Draft";
+    return !isApproved && !isRejected && !isDraft;
   }).length;
 
   const recentProperties = useMemo(
@@ -130,13 +171,24 @@ export default function DashboardWithAccordion() {
     [propertiesData, searchTerm]
   );
 
+  const updateUrlSelection = (id: string | null) => {
+    if (id) {
+      router.replace(`${pathname}?selected=${id}`, { scroll: false });
+    } else {
+      router.replace(pathname, { scroll: false });
+    }
+  };
+
   const handleToggleAccordion = (id: string) => {
-    setActiveAccordionId((prevId) => (prevId === id ? null : id));
+    const newId = activeAccordionId === id ? null : id;
+    setActiveAccordionId(newId);
+    updateUrlSelection(newId);
   };
 
   const handleRecentClick = (id: string) => {
     setActiveAccordionId(id);
-
+    updateUrlSelection(id);
+    
     daftarRef.current?.scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -206,7 +258,11 @@ export default function DashboardWithAccordion() {
                     </div>
                   </div>
                   <div className="self-start mb-1 sm:mb-0 sm:ml-20 flex-shrink-0">
-                    <StatusBadge status={p.status_ulok_eksternal} kplt_approval={p.kplt_approval} />
+                    <StatusBadge 
+                      status={p.status_ulok_eksternal} 
+                      kplt_approval={p.kplt_approval} 
+                      ulok_approval={p.ulok_approval}
+                    />
                   </div>
                 </div>
               );
@@ -257,7 +313,6 @@ export default function DashboardWithAccordion() {
 
           <div className="lg:w-1/3">
             <div className="lg:sticky lg:top-20 space-y-4">
-              
               <div className="relative w-full">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -271,15 +326,21 @@ export default function DashboardWithAccordion() {
 
               <div
                 id="timeline-wrap"
-                className="p-6 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-y-auto max-h-[calc(100vh-12rem)]"
+                className="p-6 bg-white rounded-2xl shadow-lg border border-gray-100 relative"
               >
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center pb-3 border-b border-gray-200">
-                  <Briefcase className="w-5 h-5 mr-2 text-rose-500" />
-                  Riwayat Progres
-                </h3>
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                    <Briefcase className="w-5 h-5 mr-2 text-rose-500" />
+                    Riwayat Progres
+                  </h3>
+                  {isDetailLoading && (
+                    <Loader2 className="w-4 h-4 text-rose-500 animate-spin" />
+                  )}
+                </div>
+
                 <TimelineStatus
-                  property={selectedProperty}
-                  assetName={selectedProperty?.alamat}
+                  property={detailProperty}
+                  assetName={detailProperty?.alamat}
                 />
               </div>
             </div>
