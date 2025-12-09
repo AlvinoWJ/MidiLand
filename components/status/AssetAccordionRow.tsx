@@ -6,13 +6,16 @@ import { AssetDetailContent } from './AssetDetailContent';
 
 interface AssetAccordionRowProps {
     property: UlokEksternal;
-    isSelected: boolean;
+    isSelected: boolean; 
     onToggle: (id: string) => void;
     onAssetUpdate?: (updatedProperty: UlokEksternal) => void; 
 }
 
 export const AssetAccordionRow: React.FC<AssetAccordionRowProps> = ({ property, isSelected, onToggle, onAssetUpdate }) => {
-    const { id, kabupaten, provinsi, alamat, status_ulok_eksternal, created_at, bentuk_objek, kplt_approval } = property;
+    const { 
+        id, kabupaten, provinsi, alamat, status_ulok_eksternal, 
+        created_at, bentuk_objek, kplt_approval, ulok_approval 
+    } = property;
     
     const handleUpdateSuccess = (updatedProperty: UlokEksternal) => {
         if (onAssetUpdate) {
@@ -28,7 +31,6 @@ export const AssetAccordionRow: React.FC<AssetAccordionRowProps> = ({ property, 
             default: return Building2;
         }
     };
-    
     const PropertyIcon = getPropertyIcon();
 
     const formatDateTime = (dateString: string) => {
@@ -67,11 +69,13 @@ export const AssetAccordionRow: React.FC<AssetAccordionRowProps> = ({ property, 
                     `}>
                         <PropertyIcon className="w-6 h-6 text-white" />
                     </div>
-                    
                     <div className="flex-1 min-w-0">
-                        {/* UPDATE 1: Pass kplt_approval untuk tampilan Desktop */}
                         <div className="hidden md:flex mb-2 h-8 items-center">
-                            <StatusBadge status={status_ulok_eksternal} kplt_approval={kplt_approval} />
+                            <StatusBadge 
+                                status={status_ulok_eksternal} 
+                                kplt_approval={kplt_approval} 
+                                ulok_approval={ulok_approval}
+                            />
                         </div>
 
                         <div className="flex items-center space-x-2 mb-1">
@@ -91,9 +95,12 @@ export const AssetAccordionRow: React.FC<AssetAccordionRowProps> = ({ property, 
                 
                 <div className="w-full md:w-auto flex flex-row md:flex-col justify-between md:justify-start items-center md:items-end md:ml-4 self-start">
                     <div className="md:hidden">
-                        <StatusBadge status={status_ulok_eksternal} kplt_approval={kplt_approval} />
+                        <StatusBadge 
+                            status={status_ulok_eksternal} 
+                            kplt_approval={kplt_approval} 
+                            ulok_approval={ulok_approval}
+                        />
                     </div>
-                    
                     <div className={`p-1.5 rounded-full transition-colors ${isSelected ? 'bg-rose-100' : 'bg-gray-100'}`}>
                         {isSelected ? <ChevronUp className="w-5 h-5 text-rose-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
                     </div>
@@ -101,7 +108,7 @@ export const AssetAccordionRow: React.FC<AssetAccordionRowProps> = ({ property, 
             </button>
             
             {isSelected && <div className="h-[4px] w-full bg-rose-500" />}
-
+            
             <div className={`
                 transition-all duration-500 ease-in-out 
                 ${isSelected ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}
