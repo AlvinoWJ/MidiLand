@@ -83,9 +83,18 @@ export const generateTimeline = (property: UlokEksternal): TimelineStep[] => {
     let approvalDetails = "Menunggu keputusan manajemen (GM/KPLT)";
     const kpltStatus = property.kplt_approval ? property.kplt_approval.toLowerCase() : '';
 
-    let finalDate = property.kplt_approved_at || property.approved_at;
-    if (!finalDate && (status === 'Rejected' || ['nok', 'rejected', 'tolak'].includes(ulokApp))) {
+    let finalDate: string | null | undefined = null;
+    if (['nok', 'rejected', 'tolak', 'tidak'].includes(ulokApp)) {
+        finalDate = property.internal_reviewed_at;
+    }
+    else if (property.kplt_approved_at) {
+        finalDate = property.kplt_approved_at;
+    }
+    else if (status === 'Rejected') {
         finalDate = property.updated_at;
+    }
+    else {
+        finalDate = property.approved_at;
     }
 
     if (kpltStatus) {
