@@ -5,27 +5,25 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+
   typescript: {
     ignoreBuildErrors: true,
   },
-  
+
   // Konfigurasi gambar yang benar untuk mengizinkan SEMUA avatar Google
   images: {
     remotePatterns: [
       {
-        protocol: 'http', // Sesuai pesan error
-        hostname: 'googleusercontent.com', // Sesuai pesan error
-        port: '',
-        pathname: '/**',
+        protocol: "http", // Sesuai pesan error
+        hostname: "googleusercontent.com", // Sesuai pesan error
+        port: "",
+        pathname: "/**",
       },
       {
-        protocol: 'https', // Ini untuk avatar Google yang umum (lh3)
-        hostname: 'lh3.googleusercontent.com',
-        port: '',
-        pathname: '/**',
+        protocol: "https", // Ini untuk avatar Google yang umum (lh3)
+        hostname: "lh3.googleusercontent.com",
+        port: "",
+        pathname: "/**",
       },
     ],
   },

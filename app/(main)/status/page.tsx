@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Search,
@@ -11,7 +11,7 @@ import {
   Briefcase,
   Building2,
   Layers,
-  Loader2,
+  Loader2, 
 } from "lucide-react";
 import { useFetchData } from "@/components/status/hooks/useFetchData";
 import { KPICard } from "@/components/status/KPICard";
@@ -39,24 +39,21 @@ const formatFullDateTime = (dateString: string) => {
   });
 };
 
-function DashboardContent() {
+function StatusContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname(); 
+  
   const selectedId = searchParams.get("selected");
+  
   const { data: fetchedProperties, loading, error } = useFetchData();
   const [propertiesData, setPropertiesData] = useState<UlokEksternal[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeAccordionId, setActiveAccordionId] = useState<string | null>(
-    null
-  );
-  const [detailProperty, setDetailProperty] = useState<UlokEksternal | null>(
-    null
-  );
+  const [activeAccordionId, setActiveAccordionId] = useState<string | null>(null);
+  const [detailProperty, setDetailProperty] = useState<UlokEksternal | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
 
   const daftarRef = useRef<HTMLDivElement>(null);
-
   const hasHandledInitialSelection = useRef(false);
 
   useEffect(() => {
@@ -66,20 +63,13 @@ function DashboardContent() {
   }, [fetchedProperties]);
 
   useEffect(() => {
-    if (
-      selectedId &&
-      propertiesData.length > 0 &&
-      !hasHandledInitialSelection.current
-    ) {
+    if (selectedId && propertiesData.length > 0 && !hasHandledInitialSelection.current) {
       const propertyExists = propertiesData.some((p) => p.id === selectedId);
-
+      
       if (propertyExists) {
         setActiveAccordionId(selectedId);
         hasHandledInitialSelection.current = true;
-        setTimeout(
-          () => scrollAccordionHeaderToAlignWithTimeline(selectedId),
-          300
-        );
+        setTimeout(() => scrollAccordionHeaderToAlignWithTimeline(selectedId), 300);
       }
     }
   }, [selectedId, propertiesData]);
@@ -92,16 +82,14 @@ function DashboardContent() {
 
     setIsDetailLoading(true);
 
-    const optimisticData = propertiesData.find(
-      (p) => p.id === activeAccordionId
-    );
+    const optimisticData = propertiesData.find((p) => p.id === activeAccordionId);
     if (optimisticData) {
       setDetailProperty(optimisticData);
     }
 
     const fetchDetail = async () => {
       try {
-        const res = await fetch(`/api/usulan_lokasi/${activeAccordionId}`);
+        const res = await fetch("/api/usulan_lokasi/" + activeAccordionId);
         const json = await res.json();
 
         if (json.success && json.ulok_eksternal) {
@@ -125,7 +113,7 @@ function DashboardContent() {
   }, [activeAccordionId]);
 
   const scrollAccordionHeaderToAlignWithTimeline = (accordionId: string) => {
-    const element = document.getElementById(`accordion-${accordionId}`);
+    const element = document.getElementById("accordion-" + accordionId);
     if (!element) return;
     const FIXED_TOP_OFFSET = 80;
     requestAnimationFrame(() => {
@@ -150,6 +138,7 @@ function DashboardContent() {
     const kplt = p.kplt_approval?.toLowerCase() || "";
     return ["approved", "disetujui", "ok"].includes(kplt);
   }).length;
+  
   const pending = propertiesData.filter((p) => {
     const kplt = p.kplt_approval?.toLowerCase() || "";
     const isApproved = ["approved", "disetujui", "ok"].includes(kplt);
@@ -186,7 +175,7 @@ function DashboardContent() {
 
   const updateUrlSelection = (id: string | null) => {
     if (id) {
-      router.replace(`${pathname}?selected=${id}`, { scroll: false });
+      router.replace(pathname + "?selected=" + id, { scroll: false });
     } else {
       router.replace(pathname, { scroll: false });
     }
@@ -201,7 +190,7 @@ function DashboardContent() {
   const handleRecentClick = (id: string) => {
     setActiveAccordionId(id);
     updateUrlSelection(id);
-
+    
     daftarRef.current?.scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -236,24 +225,9 @@ function DashboardContent() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-          <KPICard
-            title="Total Property Terdaftar"
-            value={total}
-            Icon={List}
-            color="text-indigo-600"
-          />
-          <KPICard
-            title="Total Pengajuan Dalam Proses"
-            value={pending}
-            Icon={Clock}
-            color="text-amber-600"
-          />
-          <KPICard
-            title="Total Property disetujui"
-            value={rented}
-            Icon={CheckCircle}
-            color="text-green-600"
-          />
+          <KPICard title="Total Property Terdaftar" value={total} Icon={List} color="text-indigo-600" />
+          <KPICard title="Total Pengajuan Dalam Proses" value={pending} Icon={Clock} color="text-amber-600" />
+          <KPICard title="Total Property disetujui" value={rented} Icon={CheckCircle} color="text-green-600" />
         </div>
 
         <div className="p-4 md:p-6 bg-white rounded-2xl shadow-lg border border-gray-100 mb-8">
@@ -286,9 +260,9 @@ function DashboardContent() {
                     </div>
                   </div>
                   <div className="self-start mb-1 sm:mb-0 sm:ml-20 flex-shrink-0">
-                    <StatusBadge
-                      status={p.status_ulok_eksternal}
-                      kplt_approval={p.kplt_approval}
+                    <StatusBadge 
+                      status={p.status_ulok_eksternal} 
+                      kplt_approval={p.kplt_approval} 
                       ulok_approval={p.ulok_approval}
                     />
                   </div>
@@ -309,7 +283,7 @@ function DashboardContent() {
             <div className="space-y-6">
               {filteredProperties.length > 0 ? (
                 filteredProperties.map((property) => (
-                  <div key={property.id} id={`accordion-${property.id}`}>
+                  <div key={property.id} id={"accordion-" + property.id}>
                     <AssetAccordionRow
                       property={property}
                       isSelected={activeAccordionId === property.id}
@@ -376,5 +350,19 @@ function DashboardContent() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function StatusPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Clock className="animate-spin w-10 h-10 text-rose-500" />
+        </div>
+      }
+    >
+      <StatusContent />
+    </Suspense>
   );
 }
