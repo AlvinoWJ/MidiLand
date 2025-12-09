@@ -69,7 +69,7 @@ export const generateTimeline = (property: UlokEksternal): TimelineStep[] => {
             internalDetails = "Lolos verifikasi internal, lanjut ke KPLT" + internalDateText;
         } else if (['nok', 'rejected', 'tolak', 'tidak'].includes(ulokApp)) {
             internalStatus = 'completed'; 
-            internalDetails = `Pengajuan Ditolak pada verifikasi Tahap 2 (${property.ulok_approval})` + internalDateText;
+            internalDetails = `Pengajuan Properti Ditolak pada verifikasi Tahap 2 (${property.ulok_approval})` + internalDateText;
         } else {
             internalStatus = 'in-progress'; 
             internalDetails = "Sedang diverifikasi oleh Tim Internal";
